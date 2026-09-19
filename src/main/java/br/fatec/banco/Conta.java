@@ -1,5 +1,9 @@
 package br.fatec.banco;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+
 public class Conta {
 
 	private Integer numero;
@@ -7,6 +11,10 @@ public class Conta {
 	private String cliente;
 	
 	private Double saldo;
+	
+	private Double valorFinanciamento;
+	
+	private List<String> extrato = new ArrayList<>();
 	
 	public Conta(Integer numero, String cliente) {
 		this.numero = numero;
@@ -22,7 +30,20 @@ public class Conta {
 	public Double atualizarSaldo(Double valor) {
 		this.saldo += valor;
 		
+		SimpleDateFormat df = new SimpleDateFormat("dd/MM/YYYY HH:mm");
+		String data = df.format(System.currentTimeMillis());
+		
+		String operacao = (valor > 0) ? "Deposito" : "Saque";
+		
+		extrato.add(data + " " + operacao + "  " + valor + " " + saldo);
 		return this.saldo;
+	}
+	
+	public void mostrarExtrato() {
+		System.out.println("##### Extrato de Movimentações #########");
+		this.extrato.forEach(e -> {
+			System.out.println(e);
+			});
 	}
 	
 	public String getCliente() {
@@ -44,6 +65,14 @@ public class Conta {
 	@Override
 	public String toString() {
 		return "Conta [numero=" + numero + ", cliente=" + cliente + ", saldo=" + saldo + "]";
+	}
+
+	public Double getValorFinanciamento() {
+		return valorFinanciamento;
+	}
+
+	public void setValorFinanciamento(Double valorFinanciamento) {
+		this.valorFinanciamento = valorFinanciamento;
 	}
 	
 	

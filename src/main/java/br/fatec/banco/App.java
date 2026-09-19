@@ -32,5 +32,11 @@ public class App {
 		dudaPay.depositar(c3, 300D);
 		System.out.println(c3);
 		dudaPay.sacar(c3, 50D); //erro
+		
+		Financiamento roniFinancia = new RoniPay();
+		//roniFinancia.financiar(c1, 50D);
+		System.out.println(c1.getValorFinanciamento());
+		
+		c3.mostrarExtrato();
 	}
 }

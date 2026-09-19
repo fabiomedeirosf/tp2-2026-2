@@ -1,15 +1,7 @@
 package br.fatec.banco;
 
-public class Duda2Pay implements Financeira {
+public class Duda2Pay extends FinanceiraPadrao {
 
-	@Override
-	public Double depositar(Conta conta, Double valor) {
-		if(valor <= 0D) {
-			throw new RuntimeException("Valor Inválido para depósito");
-		}
-		
-		return conta.atualizarSaldo(valor);
-	}
 
 	@Override
 	public Double sacar(Conta conta, Double valor) {
