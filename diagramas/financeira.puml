@@ -1,0 +1,48 @@
+@startuml
+title Diagrama de Classes - br.fatec.banco (Financeira)
+
+interface Financeira {
+  + depositar(conta: Conta, valor: Double): Double
+  + sacar(conta: Conta, valor: Double): Double
+}
+
+abstract class FinanceiraPadrao
+
+class RoniPay {
+  + financiar(conta: Conta, valor: Double): Double
+}
+
+class DennerBank {
+  + depositar(conta: Conta, valor: Double): Double
+}
+
+class Duda2Pay {
+  + sacar(conta: Conta, valor: Double): Double
+}
+
+interface Financiamento {
+  + financiar(conta: Conta, valor: Double): Double
+}
+
+class Conta {
+  - numero: Integer
+  - cliente: String
+  - saldo: Double
+  - valorFinanciamento: Double
+  + atualizarSaldo(valor: Double): Double
+}
+
+class App
+
+FinanceiraPadrao ..|> Financeira
+RoniPay --|> FinanceiraPadrao
+DennerBank --|> FinanceiraPadrao
+Duda2Pay --|> FinanceiraPadrao
+RoniPay ..|> Financiamento
+
+FinanceiraPadrao --> Conta : usa
+RoniPay --> Conta : usa
+App --> Financeira : usa
+App --> Financiamento : usa
+
+@enduml
