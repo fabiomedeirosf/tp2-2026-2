@@ -2,7 +2,7 @@
 
 Repositório educacional com exemplos independentes escritos em Java para praticar Programação Orientada a Objetos (POO). Cada pacote demonstra um conjunto de conceitos, como abstração, herança, encapsulamento, interfaces e polimorfismo.
 
-O projeto é configurado com **Java 17** e **Maven**, não possui dependências externas e pode ser compilado e executado pelo terminal ou por uma IDE compatível com Maven.
+O projeto é configurado com **Java 17** e **Maven** e pode ser compilado e executado pelo terminal ou por uma IDE compatível com Maven. A única dependência externa é o [Gson](https://github.com/google/gson), usada pelo exemplo de consulta de CEP para ler o JSON devolvido pela API.
 
 ## Objetivos de aprendizagem
 
@@ -14,13 +14,16 @@ Ao explorar os exemplos, você deverá ser capaz de:
 - identificar comportamento compartilhado e comportamento especializado;
 - usar encapsulamento para proteger o estado de objetos;
 - relacionar classes concretas ao contrato declarado pela abstração;
-- comparar o cálculo e a seleção de valores em diferentes implementações.
+- comparar o cálculo e a seleção de valores em diferentes implementações;
+- validar dados antes de usá-los e explicar o erro ao usuário;
+- consumir uma API HTTP e converter a resposta JSON em objetos.
 
 ## Tecnologias
 
 - Java 17
 - Maven 3.x
 - API padrão do Java
+- [Gson](https://github.com/google/gson) 2.11.0 (somente no exemplo de CEP)
 - Eclipse ou outra IDE com suporte a projetos Maven
 
 ## Pré-requisitos
@@ -55,7 +58,13 @@ Compile o projeto:
 mvn clean compile
 ```
 
-Ao concluir, as classes compiladas estarão em `target/classes`.
+Ao concluir, as classes compiladas estarão em `target/classes` e as dependências baixadas em `target/lib`.
+
+Como o exemplo de CEP precisa do Gson em tempo de execução, a execução dele usa um classpath com os dois diretórios. No Windows, o separador é `;`:
+
+```bash
+java -cp "target/classes:target/lib/*" br.fatec.cep.App
+```
 
 ### Usando uma IDE
 
@@ -80,6 +89,8 @@ java -cp target/classes br.fatec.banco.App
 java -cp target/classes br.fatec.heranca.App
 java -cp target/classes br.fatec.heranca.apostas.App
 java -cp target/classes br.fatec.delivery.App
+java -cp target/classes br.fatec.imc.App
+java -cp "target/classes:target/lib/*" br.fatec.cep.App
 ```
 
 A tabela abaixo resume as classes de entrada:
@@ -91,6 +102,12 @@ A tabela abaixo resume as classes de entrada:
 | Impostos | `br.fatec.heranca.App` | `java -cp target/classes br.fatec.heranca.App` |
 | Apuração de apostas | `br.fatec.heranca.apostas.App` | `java -cp target/classes br.fatec.heranca.apostas.App` |
 | Cálculo de frete | `br.fatec.delivery.App` | `java -cp target/classes br.fatec.delivery.App` |
+| Cálculo de IMC | `br.fatec.imc.App` | `java -cp target/classes br.fatec.imc.App` |
+| Consulta de CEP | `br.fatec.cep.App` | `java -cp "target/classes:target/lib/*" br.fatec.cep.App` |
+
+O exemplo de IMC é interativo: pede peso e altura digitados no teclado e aceita tanto `1.75` quanto `1,75`.
+
+O exemplo de CEP também é interativo: pede o CEP digitado no teclado e faz requisições reais à internet.
 
 ## Mapa dos exemplos
 
@@ -214,6 +231,98 @@ Também são usados:
 java -cp target/classes br.fatec.delivery.App
 ```
 
+### 6. Encapsulamento, validação e enumeração no cálculo de IMC
+
+**Pacote:** `br.fatec.imc`  
+**Classe principal:** `App`
+
+Este exemplo calcula o Índice de Massa Corporal a partir do peso e da altura e classifica o resultado. Diferente dos demais, ele é **interativo**: os valores são digitados no teclado.
+
+Componentes:
+
+- `IMC`: guarda peso e altura, valida a entrada e calcula o índice;
+- `ClassificacaoIMC`: enumeração com as faixas da OMS e um emoji representativo por faixa;
+- `App`: realiza a leitura do teclado e a exibição do resultado.
+
+Comportamentos estudados:
+
+- validação de dados no construtor, com `IllegalArgumentException` e mensagem explicativa;
+- encapsulate e expõe por `getters` e `setters`;
+- `enum` com atributos e construtor privado;
+- método `static` de fábrica (`ClassificacaoIMC.de`) que localiza a faixa correspondente;
+- leitura de entrada com `Scanner`, tratando erro de formato com `try`/`catch`;
+- laço de repetição que permite calcular vários índices na mesma execução.
+
+As faixas seguem a classificação da OMS para adultos. Cada faixa é fechada na esquerda e aberta na direita, por isso um IMC de exatamente `25.00` já pertence a **Sobrepeso** e não a **Normal**.
+
+| Faixa | Classificação |
+|---|---|
+| abaixo de 18,5 | Magreza |
+| 18,5 a 24,9 | Normal |
+| 25,0 a 29,9 | Sobrepeso |
+| 30,0 a 34,9 | Obesidade grau I |
+| 35,0 a 39,9 | Obesidade grau II |
+| 40,0 ou mais | Obesidade grau III |
+
+O IMC é uma estimativa. O exemplo exibe, junto do resultado, um aviso de que ele não substitui uma avaliação médica.
+
+```bash
+java -cp target/classes br.fatec.imc.App
+```
+
+Quando a entrada é um número, o programa calcula, classifica e pergunta se deseja calcular outro índice. Peso e altura iguais a zero ou negativos são recusados com uma explicação, e a leitura de um valor não numérico repete a pergunta.
+
+### 7. Consulta de CEP com HTTP e JSON
+
+**Pacote:** `br.fatec.cep`  
+**Classe principal:** `App`
+
+Este exemplo consulta a API pública da [ViaCEP](https://viacep.com.br). O usuário digita um CEP e o programa exibe o endereço correspondente.
+
+Componentes:
+
+- `Endereco`: guarda os dados do endereço devolvidos pela API;
+- `ViaCepClient`: monta a requisição HTTP, envia e transforma o JSON em um `Endereco`;
+- `App`: realiza a leitura do teclado e a exibição do resultado.
+
+Recursos estudados:
+
+- `HttpClient` e `HttpRequest`, da API padrão do Java, para a requisição `GET`;
+- `BodyHandlers.ofString`, com `UTF-8`, para ler o corpo da resposta;
+- `Gson` para converter o JSON em objetos;
+- `JsonObject` para inspecionar a resposta antes de convertê-la;
+- tempo limite (`timeout`) de conexão e de requisição;
+- `IOException` para falha de rede e `InterruptedException` para interrupção da execução;
+- leitura de entrada com `Scanner` e laço que repete a consulta.
+
+O endereço da requisição é montado a partir do CEP digitado:
+
+```text
+https://viacep.com.br/ws/{cep}/json/
+```
+
+Antes da chamada, o exemplo remove tudo que não for dígito, de modo que tanto `01310100` quanto `01310-100` funcionam. Quando o CEP não existe, a API responde apenas com `{"erro": true}` e o programa avisa que o CEP não foi encontrado; falhas de rede ou de status HTTP Produzem uma mensagem explicativa, e a consulta pode ser repetida na mesma execução.
+
+```bash
+java -cp "target/classes:target/lib/*" br.fatec.cep.App
+```
+
+Para um CEP válido, como `01310-100`, a saída é:
+
+```text
+Informe o CEP: 01310-100
+
+CEP: 01310-100
+Logradouro: Avenida Paulista
+Complemento: de 612 a 1510 - lado par
+Bairro: Bela Vista
+Cidade: São Paulo
+UF: SP
+DDD: 11
+```
+
+Este exemplo é o único do projeto que depende do Gson. Por isso a execução usa o classpath com `target/lib`, onde o `maven-dependency-plugin` copia as dependências durante a compilação.
+
 ## Conceitos de POO em resumo
 
 | Conceito | Onde observar |
@@ -221,7 +330,7 @@ java -cp target/classes br.fatec.delivery.App
 | Abstração | `Financeira`, `Imposto`, `Apuracao` e `Cotacao` |
 | Herança | `FinanceiraPadrao`, `ImpostoPadrao` e `Apuracao` |
 | Polimorfismo | referências dos tipos `Financeira`, `Imposto`, `Apuracao` e `Cotacao` |
-| Encapsulamento | estado e operações de `Conta` e `Frete` |
+| Encapsulamento | estado e operações de `Conta`, `Frete` e `Endereco` |
 | Sobrescrita | métodos de saque e cálculo específico das subclasses |
 | Composição | `Conta` associada às operações financeiras e ao extrato |
 
@@ -252,7 +361,8 @@ Os exemplos foram propostos para estudo e possuem pontos que podem ser discutido
 - `CarolLog.cotar` pode retornar `null` para pesos acima do limite suportado;
 - algumas regras não validam entradas nulas ou valores negativos;
 - a formatação de datas em `Conta` utiliza `YYYY`, que pode representar semana do ano em vez do ano calendário em Java;
-- `ApuracaoTeleSena` está abstrata e não possui implementação concreta.
+- `ApuracaoTeleSena` está abstrata e não possui implementação concreta;
+- `ViaCepClient` depende da API pública da ViaCEP, que exige conexão com a internet e pode ficar indisponível ou mudar de formato.
 
 Essas limitações não são corrigidas neste repositório para preservar os exemplos originais da aula.
 
@@ -271,7 +381,9 @@ Essas limitações não são corrigidas neste repositório para preservar os exe
                 └── fatec/
                     ├── Main.java
                     ├── banco/
+                    ├── cep/
                     ├── delivery/
+                    ├── imc/
                     └── heranca/
                         └── apostas/
 ```

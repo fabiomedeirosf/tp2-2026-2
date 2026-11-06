@@ -7,5 +7,8 @@ public class App {
 		BIDTransporte bid = new BIDTransporte();
 		
 		System.out.print("Ganhador: "+ bid.cotarFretes(UFEnum.SP, UFEnum.BA, 1D));
+		
+		BIDTransporte.mensagem();
+		
 	}
 }

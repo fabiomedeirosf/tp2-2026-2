@@ -24,5 +24,7 @@ public class CarolLog implements Cotacao {
 		
 		return frete;
 	}
+	
+	
 
 }

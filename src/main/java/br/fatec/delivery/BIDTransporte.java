@@ -1,6 +1,10 @@
 package br.fatec.delivery;
 
 public class BIDTransporte {
+	
+	public String nome;
+	
+	public static String frete;
 
 	public Frete cotarFretes(UFEnum origem, UFEnum destino, Double peso) {
 		
@@ -32,5 +36,9 @@ public class BIDTransporte {
 		
 		return vencedor;
 		
+	}
+	
+	public static void mensagem() {
+		System.out.println("pizza do ronie");
 	}
 }

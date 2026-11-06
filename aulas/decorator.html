@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Padrão Decorator — Cafeteria Sabor &amp; Café</title>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#fff7ed',
+      primaryTextColor: '#1c1917',
+      primaryBorderColor: '#b45309',
+      lineColor: '#78716c',
+      secondaryColor: '#fef3c7',
+      tertiaryColor: '#fafafa',
+      fontFamily: 'system-ui, sans-serif'
+    }
+  });
+</script>
+<style>
+  :root {
+    --fundo: #fafafa;
+    --cartao: #ffffff;
+    --texto: #1c1917;
+    --suave: #57534e;
+    --borda: #e7e5e4;
+    --accent: #b45309;
+    --accent-claro: #fef3c7;
+    --codigo-fundo: #f5f5f4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: var(--fundo);
+    color: var(--texto);
+    line-height: 1.55;
+  }
+
+  /* barra de progresso */
+  #progresso {
+    position: fixed; top: 0; left: 0; height: 4px;
+    background: var(--accent); width: 0%;
+    z-index: 100; transition: width 0.15s ease-out;
+  }
+  /* indicador de slide */
+  #contador {
+    position: fixed; bottom: 1rem; right: 1.25rem;
+    background: var(--cartao); border: 1px solid var(--borda);
+    border-radius: 999px; padding: 0.3rem 0.9rem;
+    font-size: 0.85rem; color: var(--suave); z-index: 100;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  section.slide {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 3rem 1.5rem;
+    scroll-snap-align: start;
+  }
+  html { scroll-snap-type: y proximity; }
+
+  .cartao {
+    background: var(--cartao);
+    border: 1px solid var(--borda);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.05);
+    max-width: 900px; width: 100%;
+    padding: 2.5rem 3rem;
+  }
+  .cartao.titulo-cap {
+    text-align: center;
+    padding: 4rem 3rem;
+  }
+
+  h1 { font-size: 2.6rem; color: var(--accent); margin-bottom: 0.5rem; }
+  h2 {
+    font-size: 1.7rem; color: var(--accent);
+    margin-bottom: 1.2rem; padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--accent-claro);
+  }
+  h3 { font-size: 1.15rem; margin: 1.2rem 0 0.5rem; color: var(--texto); }
+  p  { margin-bottom: 0.9rem; color: var(--texto); }
+  .suave { color: var(--suave); }
+  .destaque {
+    background: var(--accent-claro);
+    border-left: 4px solid var(--accent);
+    padding: 0.8rem 1.1rem; border-radius: 0 8px 8px 0;
+    margin: 1rem 0;
+  }
+  ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
+  li { margin-bottom: 0.45rem; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 1rem 0;
+    font-size: 0.95rem;
+  }
+  th, td {
+    border: 1px solid var(--borda); padding: 0.55rem 0.8rem;
+    text-align: left; vertical-align: top;
+  }
+  th { background: var(--accent-claro); color: var(--texto); }
+
+  pre.codigo {
+    background: var(--codigo-fundo);
+    border: 1px solid var(--borda);
+    border-radius: 10px;
+    padding: 1.1rem 1.3rem;
+    overflow-x: auto;
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.88rem; line-height: 1.5;
+    margin: 0.8rem 0 1.2rem;
+  }
+  .kw  { color: #9a3412; font-weight: 600; }
+  .str { color: #166534; }
+  .com { color: #78716c; font-style: italic; }
+  .num { color: #1d4ed8; }
+
+  .mermaid {
+    background: #fff;
+    border: 1px solid var(--borda);
+    border-radius: 10px;
+    padding: 1rem;
+    margin: 1rem 0;
+    text-align: center;
+    overflow-x: auto;
+  }
+  .duas-colunas {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+  }
+  @media (max-width: 720px) {
+    .duas-colunas { grid-template-columns: 1fr; }
+    .cartao { padding: 1.5rem; }
+    h1 { font-size: 1.9rem; }
+  }
+  .fim {
+    font-size: 1.3rem; color: var(--accent); font-weight: 600;
+    text-align: center; margin-top: 1.5rem;
+  }
+  .dica-navegacao {
+    margin-top: 2rem; font-size: 0.9rem; color: var(--suave);
+  }
+</style>
+</head>
+<body>
+
+<div id="progresso"></div>
+<div id="contador">1 / 14</div>
+
+<!-- ═══════════════ SLIDE 1 — CAPA ═══════════════ -->
+<section class="slide" id="s1">
+  <div class="cartao titulo-cap">
+    <p class="suave">Padrões de Projeto — GoF</p>
+    <h1>Decorator</h1>
+    <p style="font-size:1.2rem;">Cafeteria Sabor &amp; Café — bebidas simples e compostas</p>
+    <div class="destaque" style="display:inline-block; text-align:left;">
+      "Compor objetos para formar estruturas recursivas e
+      estender o comportamento sem criar novas subclasses."
+    </div>
+    <p class="dica-navegacao">Use ↑ / ↓ ou PageUp / PageDown para navegar · role a página livremente</p>
+  </div>
+</section>
+
+<!-- ═══════════════ SLIDE 2 — CENÁRIO ═══════════════ -->
+<section class="slide" id="s2">
+  <div class="cartao">
+    <h2>2 · O cardápio da Sabor &amp; Café</h2>
+    <p>A cafeteria vende <strong>bebidas simples</strong>, cada uma com seu preço individual:</p>
+    <table>
+      <tr><th>Bebida simples</th><th>Preço</th></tr>
+      <tr><td>Café</td><td>R$ 5,00</td></tr>
+      <tr><td>Chá</td><td>R$ 4,00</td></tr>
+      <tr><td>Suco de laranja</td><td>R$ 6,00</td></tr>
+    </table>
+    <p>Mas os clientes também pedem <strong>bebidas compostas</strong> — feitas de uma bebida base
+    somada aos ingredientes adicionais:</p>
+    <table>
+      <tr><th>Bebida composta</th><th>Composição</th><th>Preço</th></tr>
+      <tr><td>Capuccino</td><td>Café + Leite + Chocolate</td><td>R$ 8,00</td></tr>
+      <tr><td>Mocha</td><td>Café + Chocolate</td><td>R$ 6,50</td></tr>
+      <tr><td>Chá com Leite</td><td>Chá + Leite</td><td>R$ 5,50</td></tr>
+    </table>
+    <div class="destaque">
+      <strong>Regra de negócio:</strong> o preço de uma bebida composta é a
+      <em>soma</em> do preço da bebida base com o preço de <em>cada</em> ingrediente adicional.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ SLIDE 3 — DOR: IF/ELSE ═══════════════ -->
+<section class="slide" id="s3">
+  <div class="cartao">
+    <h2>3 · A tentativa óbvia: calcular o custo "na mão"</h2>
+    <p>Uma primeira reação do programador é mapear cada combinação:</p>
+<pre class="codigo"><span class="kw">public double</span> calcularCusto(Bebida b) {
+    <span class="kw">if</span> (b == CAFE)             <span class="kw">return</span> <span class="num">5.00</span>;
+    <span class="kw">if</span> (b == CHA)              <span class="kw">return</span> <span class="num">4.00</span>;
+    <span class="kw">if</span> (b == CAPUCCINO)        <span class="kw">return</span> <span class="num">5.00</span> + <span class="num">1.50</span> + <span class="num">1.50</span>;
+    <span class="kw">if</span> (b == MOCHA)            <span class="kw">return</span> <span class="num">5.00</span> + <span class="num">1.50</span>;
+    <span class="com">// ... dezenas de mais if/else</span>
+}</pre>
+    <p>E quando o cliente pedir <strong>"capuccino sem chocolate, com chantilly extra"</strong>?</p>
+    <ul>
+      <li>Cada nova combinação exige <strong>um novo ramo</strong> no código (ou uma nova constante).</li>
+      <li>O caixa não pode montar o pedido em <strong>tempo de execução</strong>.</li>
+      <li>A descrição da bebida fica espalhada em outro cascade de <code>if</code>s.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════ SLIDE 4 — HERANÇA EXPLODE ═══════════════ -->
+<section class="slide" id="s4">
+  <div class="cartao">
+    <h2>4 · Tentativa por herança: por que não escala</h2>
+    <p>A solução "clássica" de POO seria criar uma subclasse para cada combinação:</p>
+    <pre class="codigo"><span class="kw">public class</span> Capuccino <span class="kw">extends</span> Cafe { ... }
+<span class="kw">public class</span> CapuccinoComChantilly <span class="kw">extends</span> Capuccino { ... }
+<span class="kw">public class</span> Mocha <span class="kw">extends</span> Cafe { ... }</pre>
+    <div class="mermaid">
+classDiagram
+    Cafe <|-- Capuccino
+    Cafe <|-- Mocha
+    Capuccino <|-- CapuccinoComChantilly
+    Capuccino <|-- CapuccinoComLeiteExtra
+    Cafe <|-- CafeComChantilly
+    Cafe <|-- CafeComChocolate
+    Cha <|-- ChaComLeite
+    Cha <|-- ChaComLeiteComChocolate
+    class Cafe { +getCusto() }
+    class Capuccino { +getCusto() }
+    class Mocha { +getCusto() }
+    class Cha { +getCusto() }
+    </div>
+    <ul>
+      <li><strong>Combinatória:</strong> cada novo ingrediente × cada bebida base = novas subclasses.</li>
+      <li>O método <code>getCusto()</code> é <strong>duplicado</strong> em toda subclasse.</li>
+      <li>Remover um ingrediente exige <strong>outra subclasse</strong> (CapuccinoSemChocolate?).</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════ SLIDE 5 — INTENÇÃO GoF ═══════════════ -->
+<section class="slide" id="s5">
+  <div class="cartao">
+    <h2>5 · Intenção do Decorator (GoF)</h2>
+    <div class="destaque">
+      <strong>Intenção:</strong> "Attach additional responsibilities to an object
+      dynamically. Decorators provide a flexible alternative to subclassing for
+      extending functionality."<br>
+      <span class="suave">— Gamma et al., <em>Design Patterns</em>, 1994</span>
+    </div>
+    <p>Traduzindo para a Sabor &amp; Café:</p>
+    <ul>
+      <li><strong>Compor</strong> objetos: cada pedido é uma cadeia <code>bebida base + adicional₁ + adicional₂ …</code></li>
+      <li>O comportamento (<code>getCusto()</code>, <code>getDescricao()</code>) emerge da
+      <strong>soma recursiva</strong> da cadeia — não de <code>if</code>s nem de subclasses.</li>
+      <li>Novos adicionais são <strong>novas classes pequenas</strong>, abertas para extensão,
+      fechadas para modificação.</li>
+    </ul>
+    <p>Para o capuccino:</p>
+    <pre class="codigo">capuccino.<span class="kw">getCusto</span>()
+  = chocolate.getCusto()   <span class="com">// 1.50 + base</span>
+  = leite.getCusto() + <span class="num">1.50</span> <span class="com">// 5.00 + 1.50 + 1.50</span>
+  = cafe.getCusto() + <span class="num">1.50</span>
+  = <span class="num">5.00</span> + <span class="num">1.50</span> + <span class="num">1.50</span> = <span class="num">8.00</span></pre>
+  </div>
+</section>
+
+<!-- ═══════════════ SLIDE 6 — ANALOGIA ═══════════════ -->
+<section class="slide" id="s6">
+  <div class="cartao">
+    <h2>6 · Analogia: cada adicional é um envelope</h2>
+    <p>O cliente pediu um capuccino com chantilly. Imagine "embrulhar" o café:</p>
+    <div class="destaque" style="text-align:center; font-size:1.05rem;">
+      <code>Chantilly( Chocolate( Leite( Café ) ) )</code>
+    </div>
+    <div class="duas-colunas">
+      <div>
+        <h3>No mundo físico</h3>
+        <ul>
+          <li>Começa com a xícara de <strong>Café</strong>.</li>
+          <li>Uma camada de <strong>Leite</strong> envolve o café.</li>
+          <li>Uma camada de <strong>Chocolate</strong> envolve o conjunto.</li>
+          <li>Por fim, a camada de <strong>Chantilly</strong>.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>No objeto</h3>
+        <ul>
+          <li>Cada camada guarda uma referência à
+          <strong>bebida que ela decora</strong> (a "base").</li>
+          <li>Ao calcular o custo, cada camada
+          <strong> delega + soma seu extra</strong>.</li>
+          <li>Fora para dentro: descrição e custo se
+          <strong>constroem recursivamente</strong>.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="suave">Decorator = "envelopar" um objeto com uma ou mais camadas
+    que estendem seu comportamento.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ SLIDE 7 — UML ESTRUTURA ═══════════════ -->
+<section class="slide" id="s7">
+  <div class="cartao">
+    <h2>7 · Estrutura UML do padrão</h2>
+    <div class="mermaid">
+classDiagram
+    class Bebida {
+        <<interface>>
+        +getDescricao() String
+        +getCusto() double
+    }
+    class Cafe {
+        +getDescricao() String
+        +getCusto() double
+    }
+    class Cha {
+        +getDescricao() String
+        +getCusto() double
+    }
+    class Adicional {
+        -Bebida base
+        +getDescricao() String
+        +getCusto() double
+    }
+    class Leite {
+        +getNome() String
+        +getCusto() double
+    }
+    class Chocolate {
+        +getNome() String
+        +getCusto() double
+    }
+    class Chantilly {
+        +getNome() String
+        +getCusto() double
+    }
+    Bebida <|.. Cafe
+    Bebida <|.. Cha
+    Bebida <|.. Adicional
+    Adicional <|-- Leite
+    Adicional <|-- Chocolate
+    Adicional <|-- Chantilly
+    Adicional o-- Bebida : base
+    </div>
+    <p class="suave">Bebida = <em>Component</em> · Cafe/Cha = <em>ConcreteComponent</em> ·
+    Adicional = <em>Decorator</em> · Leite/Chocolate/Chantilly = <em>ConcreteDecorator</em>.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ SLIDE 8 — PARTICIPANTES ═══════════════ -->
+<section class="slide" id="s8">
+  <div class="cartao">
+    <h2>8 · Participantes e colaborações</h2>
+    <table>
+      <tr><th>Papel GoF</th><th>Classe na aula</th><th>Responsabilidade</th></tr>
+      <tr><td><em>Component</em></td><td><code>Bebida</code></td>
+          <td>Define a interface comum (custo e descrição) para componentes e decoradores.</td></tr>
+      <tr><td><em>ConcreteComponent</em></td><td><code>Cafe</code>, <code>Cha</code></td>
+          <td>Objetos "de verdade" que podem ser decorados; implementam o comportamento base.</td></tr>
+      <tr><td><em>Decorator</em></td><td><code>Adicional</code></td>
+          <td>Mantém uma referência (<code>base</code>) a um <code>Bebida</code> e delega as chamadas a ele.</td></tr>
+      <tr><td><em>ConcreteDecorator</em></td><td><code>Leite</code>, <code>Chocolate</code>, <code>Chantilly</code></td>
+          <td>Adicionam comportamento (custo extra, nome) antes/depois da delegação.</td></tr>
+    </table>
+    <h3>Colaboração: como o custo encadeia</h3>
+    <div class="destaque">
+      <code>Chocolate.getCusto()</code> → <code>Leite.getCusto()</code> →
+      <code>Cafe.getCusto()</code> → <code>5.00</code> → volta somando
+      <code>+1.50</code> → <code>+1.50</code> → <strong>R$ 8,00</strong>
+    </div>
+    <p>Nenhum participante precisa saber a composição completa: cada camada só conhece
+    a sua base. O <strong>cliente</strong> monta a cadeia desejada em tempo de execução.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ SLIDE 9 — CÓDIGO 1/3 ═══════════════ -->
+<section class="slide" id="s9">
+  <div class="cartao">
+    <h2>9 · Código Java (1/3) — Component e ConcreteComponents</h2>
+    <h3>A interface comum: <code>Bebida</code></h3>
+<pre class="codigo"><span class="kw">public interface</span> Bebida {
+    String getDescricao();
+    <span class="kw">double</span> getCusto();
+}</pre>
+    <h3>Bebidas simples</h3>
+<pre class="codigo"><span class="kw">public class</span> Cafe <span class="kw">implements</span> Bebida {
+    <span class="kw">public</span> String getDescricao() { <span class="kw">return</span> <span class="str">"Café"</span>; }
+    <span class="kw">public</span> <span class="kw">double</span> getCusto()      { <span class="kw">return</span> <span class="num">5.00</span>; }
+}
+
+<span class="kw">public class</span> Cha <span class="kw">implements</span> Bebida {
+    <span class="kw">public</span> String getDescricao() { <span class="kw">return</span> <span class="str">"Chá"</span>; }
+    <span class="kw">public</span> <span class="kw">double</span> getCusto()      { <span class="kw">return</span> <span class="num">4.00</span>; }
+}</pre>
+    <p class="suave">Qualquer bebida que o caixa queira vender sozinha implementa
+    <code>Bebida</code> — e nada mais.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ SLIDE 10 — CÓDIGO 2/3 ═══════════════ -->
+<section class="slide" id="s10">
+  <div class="cartao">
+    <h2>10 · Código Java (2/3) — O decorator abstrato</h2>
+    <p><code>Adicional</code> implementa <code>Bebida</code> <em>e</em> guarda a bebida
+    que está decorando. Isso é o truque do padrão: <strong>decorador é também um
+    componente</strong>, então pode ser decorado de novo.</p>
+<pre class="codigo"><span class="kw">public abstract class</span> Adicional <span class="kw">implements</span> Bebida {
+    <span class="kw">protected</span> Bebida base;
+
+    <span class="kw">public</span> Adicional(Bebida base) {
+        <span class="kw">this</span>.base = base;
+    }
+
+    <span class="com">// delegação: a descrição da base + o nome do extra</span>
+    <span class="kw">public</span> String getDescricao() {
+        <span class="kw">return</span> base.getDescricao() + <span class="str">" com "</span> + getNome();
+    }
+
+    <span class="kw">protected abstract</span> String getNome();
+
+    <span class="com">// por padrão, só repassa o custo da base</span>
+    <span class="kw">public</span> <span class="kw">double</span> getCusto() {
+        <span class="kw">return</span> base.getCusto();
+    }
+}</pre>
+  </div>
+</section>
+
+<!-- ═══════════════ SLIDE 11 — CÓDIGO 3/3 ═══════════════ -->
+<section class="slide" id="s11">
+  <div class="cartao">
+    <h2>11 · Código Java (3/3) — Decorators concretos e cliente</h2>
+<pre class="codigo"><span class="kw">public class</span> Leite <span class="kw">extends</span> Adicional {
+    <span class="kw">public</span> Leite(Bebida base) { <span class="kw">super</span>(base); }
+    <span class="kw">protected</span> String getNome() { <span class="kw">return</span> <span class="str">"Leite"</span>; }
+    <span class="kw">public</span> <span class="kw">double</span> getCusto()   { <span class="kw">return</span> base.getCusto() + <span class="num">1.50</span>; }
+}
+
+<span class="kw">public class</span> Chocolate <span class="kw">extends</span> Adicional {
+    <span class="kw">public</span> Chocolate(Bebida base) { <span class="kw">super</span>(base); }
+    <span class="kw">protected</span> String getNome() { <span class="kw">return</span> <span class="str">"Chocolate"</span>; }
+    <span class="kw">public</span> <span class="kw">double</span> getCusto()   { <span class="kw">return</span> base.getCusto() + <span class="num">1.50</span>; }
+}
+
+<span class="kw">public class</span> Chantilly <span class="kw">extends</span> Adicional {
+    <span class="kw">public</span> Chantilly(Bebida base) { <span class="kw">super</span>(base); }
+    <span class="kw">protected</span> String getNome() { <span class="kw">return</span> <span class="str">"Chantilly"</span>; }
+    <span class="kw">public</span> <span class="kw">double</span> getCusto()   { <span class="kw">return</span> base.getCusto() + <span class="num">1.00</span>; }
+}</pre>
+    <h3>O cliente (caixa) monta o pedido em tempo de execução</h3>
+<pre class="codigo"><span class="com">// capuccino = Café + Leite + Chocolate</span>
+Bebida capuccino = <span class="kw">new</span> Chocolate(<span class="kw">new</span> Leite(<span class="kw">new</span> Cafe()));
+System.out.println(capuccino.getDescricao());
+<span class="com">// &gt;&gt; Café com Leite com Chocolate</span>
+System.out.printf(<span class="str">"R$ %.2f%n"</span>, capuccino.getCusto());
+<span class="com">// &gt;&gt; R$ 8,00</span>
+
+<span class="com">// outro pedido: capuccino leve, com chantilly no lugar do chocolate</span>
+Bebida leve = <span class="kw">new</span> Chantilly(<span class="kw">new</span> Leite(<span class="kw">new</span> Cafe()));
+System.out.printf(<span class="str">"%s — R$ %.2f%n"</span>, leve.getDescricao(), leve.getCusto());
+<span class="com">// &gt;&gt; Café com Leite com Chantilly — R$ 7,50</span></pre>
+  </div>
+</section>
+
+<!-- ═══════════════ SLIDE 12 — CONSEQUÊNCIAS ═══════════════ -->
+<section class="slide" id="s12">
+  <div class="cartao">
+    <h2>12 · Consequências (prós e contras)</h2>
+    <div class="duas-colunas">
+      <div>
+        <h3 style="color:#166534;">✔ Vantagens</h3>
+        <ul>
+          <li><strong>Responsabilidade única:</strong> cada adicional é uma classe pequena
+          e focada (só o extra).</li>
+          <li><strong>Aberto/fechado:</strong> novos adicionais sem tocar no código existente.</li>
+          <li><strong>Combinações em tempo de execução:</strong> o cliente constrói a cadeia
+          que quiser, na ordem que quiser.</li>
+          <li><strong>Evita classes "fat":</strong> sem explosão de subclasses
+          <code>CafeComLeiteComChocolateComChantilly</code>.</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="color:#9a3412;">✘ Cuidados</h3>
+        <ul>
+          <li><strong>Muitos objetos pequenos</strong> — pode poluir depuradores e
+          <code>toString</code>/identidade.</li>
+          <li><strong>A ordem importa:</strong> <code>Chocolate(Leite(Café))</code> ≠
+          <code>Leite(Chocolate(Café))</code> na descrição (no custo, neste exemplo, é igual).</li>
+          <li><strong>Configuração manual:</strong> montar a cadeia à mão fica verbosa;
+          factories podem ajudar.</li>
+          <li><code>instanceof</code>/<code>getClass()</code> sobre decorators é
+          <strong>frágil</strong> (ex.: "é um Café?" pode ser não, é um Chocolate envolvendo um Café).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ SLIDE 13 — TRANSPARENTE VS OPACO ═══════════════ -->
+<section class="slide" id="s13">
+  <div class="cartao">
+    <h2>13 · Implementação: decorator transparente vs. opaco</h2>
+    <table>
+      <tr><th></th><th>Transparente</th><th>Opaco (o da aula)</th></tr>
+      <tr>
+        <td><strong>Decorator</strong></td>
+        <td><em>subclasse</em> do componente (ex.: <code>Adicional extends Cafe</code>)</td>
+        <td>implementa só a <em>interface</em> do componente</td>
+      </tr>
+      <tr>
+        <td><strong>Identidade</strong></td>
+        <td><code>capuccino instanceof Cafe</code> → true</td>
+        <td><code>capuccino instanceof Cafe</code> → false (é <code>Chocolate</code>)</td>
+      </tr>
+      <tr>
+        <td><strong>Risco</strong></td>
+        <td>transparência quebrada: o decorator "é" o componente em testes, mas não deve
+        ser usado sozinho</td>
+        <td>cliente precisa sempre tratar como <code>Bebida</code>, nunca como tipo concreto</td>
+      </tr>
+      <tr>
+        <td><strong>GoF recomenda</strong></td>
+        <td colspan="2">Aceitar a interface do componente e <strong>não</strong> adicionar métodos novos
+        no decorator — assim o cliente ignora a camada e o encapsulamento se mantém.
+        Decorators "self-decoration" (decorator que decora outro decorator) são naturais:
+        nossa cadeia <code>Chocolate(Leite(Café))</code> é exatamente isso.</td>
+      </tr>
+    </table>
+    <p class="suave">No UML do GoF, a ligação <em>Decorator → Component</em> aparece
+    com "…" indicando que o decorator <em>é um</em> componente estendido.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ SLIDE 14 — RELACIONADOS + FIM ═══════════════ -->
+<section class="slide" id="s14">
+  <div class="cartao">
+    <h2>14 · Padrões relacionados e resumo</h2>
+    <table>
+      <tr><th>Padrão</th><th>Diferença-chave</th></tr>
+      <tr><td><strong>Adapter</strong></td>
+          <td>Muda a <em>interface</em> de um objeto; Decorator <em>mantém</em> a interface e
+          muda o comportamento.</td></tr>
+      <tr><td><strong>Strategy</strong></td>
+          <td>Troca o <em>algoritmo</em> inteiro; Decorator <em>acrescenta</em> camadas ao
+          comportamento existente.</td></tr>
+      <tr><td><strong>Composite</strong></td>
+          <td>Também usa composição recursiva, mas com foco em <em>estrutura</em>
+          (parte-todo); Decorator foca em <em>comportamento</em> e na ordem das camadas.</td></tr>
+    </table>
+    <h3>Levando para casa</h3>
+    <ul>
+      <li>Decorator = <strong>composição dinâmica</strong> no lugar de hierarquia de subclasses.</li>
+      <li>Cada adicional da Sabor &amp; Café é uma camada que
+      <strong>delega + soma</strong>.</li>
+      <li>Component, Decorator e ConcreteComponent compartilham a
+      <strong>mesma interface</strong> — é isso que permite empilhar.</li>
+    </ul>
+    <p class="fim">Obrigado! — Sabor &amp; Café encerra o expediente ☕</p>
+  </div>
+</section>
+
+<script>
+  const secoes = Array.from(document.querySelectorAll('section.slide'));
+  const total = secoes.length;
+  const barra = document.getElementById('progresso');
+  const contador = document.getElementById('contador');
+
+  function indiceAtual() {
+    const meio = window.scrollY + window.innerHeight / 2;
+    for (let i = total - 1; i >= 0; i--) {
+      if (secoes[i].offsetTop <= meio) return i;
+    }
+    return 0;
+  }
+
+  function atualizar() {
+    const i = indiceAtual();
+    contador.textContent = (i + 1) + ' / ' + total;
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = max > 0 ? (window.scrollY / max) * 100 : 0;
+    barra.style.width = pct + '%';
+  }
+
+  function irPara(i) {
+    if (i < 0) i = 0;
+    if (i >= total) i = total - 1;
+    secoes[i].scrollIntoView({ behavior: 'smooth' });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    const atual = indiceAtual();
+    switch (e.key) {
+      case 'ArrowDown': case 'PageDown': case ' ':
+        e.preventDefault(); irPara(atual + 1); break;
+      case 'ArrowUp': case 'PageUp':
+        e.preventDefault(); irPara(atual - 1); break;
+      case 'Home':
+        e.preventDefault(); irPara(0); break;
+      case 'End':
+        e.preventDefault(); irPara(total - 1); break;
+    }
+  });
+
+  window.addEventListener('scroll', atualizar, { passive: true });
+  window.addEventListener('resize', atualizar);
+  atualizar();
+</script>
+</body>
+</html>
